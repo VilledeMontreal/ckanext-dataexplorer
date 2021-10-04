@@ -7,6 +7,8 @@ import ckan.plugins as p
 import ckan.plugins.toolkit as toolkit
 from ckan.lib.plugins import DefaultTranslation
 
+from ckanext.dataexplorer.views.dataexplorer import dataexplorer
+
 log = getLogger(__name__)
 ignore_empty = p.toolkit.get_validator('ignore_empty')
 natural_number_validator = p.toolkit.get_validator('natural_number_validator')
@@ -18,7 +20,7 @@ def get_mapview_config():
     Extracts and returns map view configuration of the reclineview extension.
     '''
     namespace = 'ckanext.spatial.common_map.'
-    return dict([(k.replace(namespace, ''), v) for k, v in config.iteritems()
+    return dict([(k.replace(namespace, ''), v) for k, v in config.items()
                  if k.startswith(namespace)])
 
 
@@ -60,7 +62,7 @@ class ReclineViewBase(p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IResourceView, inherit=True)
     p.implements(p.ITemplateHelpers, inherit=True)
-    p.implements(p.IRoutes, inherit=True)
+    p.implements(p.IBlueprint)
     p.implements(p.ITranslation)
 
     def update_config(self, config):
@@ -70,18 +72,18 @@ class ReclineViewBase(p.SingletonPlugin, DefaultTranslation):
         '''
         toolkit.add_public_directory(config, 'public')
         toolkit.add_template_directory(config, 'templates')
-        toolkit.add_resource('public', 'dataexplorer')
+        toolkit.add_resource('assets', 'dataexplorer')
 
-    # IRoutes
 
-    def before_map(self, map):
-        ctrl = 'ckanext.dataexplorer.controllers.dataexplorer:DataExplorer'
-
-        map.connect('resource_extract',
-                    '/dataexplorer/extract',
-                    controller=ctrl,
-                    action='extract')
-        return map
+    # IBlueprint
+    def get_blueprint(self):
+        return [dataexplorer]
+        # ctrl = 'ckanext.dataexplorer.controllers.dataexplorer:DataExplorer
+        # map.connect('resource_extract',
+        #             '/dataexplorer/extract',
+        #             controller=ctrl,
+        #             action='extract')
+        # return map
 
     def can_view(self, data_dict):
         resource = data_dict['resource']

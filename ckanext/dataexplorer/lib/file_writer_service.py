@@ -1,19 +1,14 @@
-try:
-    # CKAN 2.7 and later
-    from ckan.common import config
-except ImportError:
-    # CKAN 2.6 and earlier
-    from pylons import config
-
 import logging
 import json
 import csv
-import cStringIO
+from io import StringIO
 import codecs
+
+from flask.wrappers import Request, Response
 
 import ckan.logic as l
 
-from email.utils import encode_rfc2231
+from ckan.common import config
 from xlsxwriter.workbook import Workbook
 from xml.etree.cElementTree import Element, SubElement, ElementTree
 from ckan.common import _
@@ -30,7 +25,8 @@ log = logging.getLogger(__name__)
 class XMLWriter(object):
     def __init__(self, output, columns):
 
-        self.delimiter = config.get('ckanext.dataexplorer.headers_names_delimiter', "_")
+        self.delimiter = config.get(
+            'ckanext.dataexplorer.headers_names_delimiter', "_")
         self.output = output
         self.id_col = columns[0] == u'_id'
         if self.id_col:
@@ -44,13 +40,13 @@ class XMLWriter(object):
     def writerow(self, row):
         root = Element(u'row')
         if self.id_col:
-            root.attrib[u'_id'] = unicode(row[0])
+            root.attrib[u'_id'] = str(row[0])
             row = row[1:]
         for k, v in zip(self.columns, row):
             if v is None:
                 SubElement(root, k).text = u'NULL'
                 continue
-            SubElement(root, k).text = unicode(v)
+            SubElement(root, k).text = str(v)
         ElementTree(root).write(self.output, encoding=u'utf-8')
         self.output.write(b'\n')
 
@@ -78,74 +74,40 @@ class JSONWriter(object):
 
 class UnicodeCSVWriter:
     """
-    A CSV writer which will write rows to CSV file "f",
-    which is encoded in the given encoding.
+    A CSV writer which will write rows to CSV file
     """
 
-    def __init__(self, f, delimiter=',', encoding="utf-8", **kwds):
-        # Redirect output to a queue
-        self.queue = cStringIO.StringIO()
-        self.writer = csv.writer(self.queue, delimiter=delimiter, **kwds)
-        self.stream = f
-        self.encoder = codecs.getincrementalencoder(encoding)()
-
-    def writerow(self, row):
-        self.writer.writerow([self._as_str(s).encode("utf-8") for s in row])
-        # Fetch UTF-8 output from the queue ...
-        data = self.queue.getvalue()
-        data = data.decode("utf-8")
-        # ... and reencode it into the target encoding
-        data = self.encoder.encode(data)
-        # write to the target stream
-        self.stream.write(data)
-        # empty queue
-        self.queue.truncate(0)
-
-    def writerows(self, rows):
-        for row in rows:
-            self.writerow(row)
-    
-    def _as_str(self, s):
-        if isinstance(s, str) or isinstance(s, unicode):
-            return s
-        return str(s)
+    def iter_csv(columns, data, delimiter=','):
+        line = StringIO()
+        writer = csv.writer(line, delimiter=delimiter)
+        writer.writerow(columns)
+        for csv_line in data:
+            csv_line = csv_line.values()
+            writer.writerow(csv_line)
+            line.seek(0)
+            yield line.read()
+            line.truncate(0)
+            line.seek(0)
 
 class FileWriterService():
-    def _tsv_writer(self, columns, records, response, name):
+    def _tsv_writer(self, columns, records, name):
+        response = Response(UnicodeCSVWriter.iter_csv(columns, records, delimiter='\t'), mimetype='text/csv')
+        response.headers['Content-Type'] = b'text/tsv; charset=utf-8'
+        if name:
+            response.headers['Content-disposition'] = bytes(
+                'attachment; filename="{name}.tsv"'.format(
+                    name=name), encoding='utf8')
 
-        if hasattr(response, u'headers'):
-            response.headers['Content-Type'] = b'text/tsv; charset=utf-8'
-            if name:
-                response.headers['Content-disposition'] = (
-                    b'attachment; filename="{name}.tsv"'.format(
-                        name=name.encode('utf-8')))
+        return response
 
-        writer = UnicodeCSVWriter(response, delimiter='\t')
-
-        # Writing headers
-        writer.writerow([c.encode("utf-8") for c in columns])
-
-        # Writing records
-        for record in records:
-            writer.writerow([record[column] for column in columns])
-
-    def _csv_writer(self, columns, records, response, name):
-
-        if hasattr(response, u'headers'):
-            response.headers['Content-Type'] = b'text/csv; charset=utf-8'
-            if name:
-                response.headers['Content-disposition'] = (
-                    b'attachment; filename="{name}.csv"'.format(
-                        name=name.encode('utf-8')))
-
-        writer = UnicodeCSVWriter(response, delimiter=',')
-
-        # Writing headers
-        writer.writerow([c.encode("utf-8") for c in columns])
-
-        # Writing records
-        for record in records:
-            writer.writerow([record[column] for column in columns])
+    def _csv_writer(self, columns, records, name):
+        response = Response(UnicodeCSVWriter.iter_csv(columns, records), mimetype='text/csv')
+        response.headers['Content-Type'] = b'text/csv; charset=utf-8'
+        if name:
+            response.headers['Content-disposition'] = bytes(
+                'attachment; filename="{name}.csv"'.format(
+                    name=name), encoding='utf8')
+        return response
 
     def _json_writer(self, columns, records, response, name):
 
@@ -193,7 +155,7 @@ class FileWriterService():
 
     def _xlsx_writer(self, columns, records, response, name):
 
-        output = cStringIO.StringIO()
+        output = StringIO()
 
         if hasattr(response, u'headers'):
             response.headers['Content-Type'] = (
@@ -224,16 +186,16 @@ class FileWriterService():
         workbook.close()
         response.write(output.getvalue())
 
-    def write_to_file(self, columns, records, format, response, name):
+    def write_to_file(self, columns, records, format, name):
 
         format = format.lower()
         if format == 'csv':
-            return self._csv_writer(columns, records, response, name)
+            return self._csv_writer(columns, records, name)
         if format == 'json':
             return self._json_writer(columns, records, response, name)
         if format == 'xml':
             return self._xml_writer(columns, records, response, name)
         if format == 'tsv':
-            return self._tsv_writer(columns, records, response, name)
+            return self._tsv_writer(columns, records, name)
         raise l.ValidationError(_(
             u'format: must be one of %s') % u', '.join(DUMP_FORMATS))

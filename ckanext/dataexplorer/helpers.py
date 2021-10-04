@@ -1,17 +1,10 @@
 # -*- coding: utf-8 -
-
-try:
-    # CKAN 2.7 and later
-    from ckan.common import config
-except ImportError:
-    # CKAN 2.6 and earlier
-    from pylons import config
-
-
 import logging
 import json
 from datetime import date, timedelta, datetime
 from decimal import Decimal
+
+from ckan.common import config
 
 log = logging.getLogger(__name__)
 
