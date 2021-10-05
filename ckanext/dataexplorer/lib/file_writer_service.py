@@ -2,16 +2,14 @@ import logging
 import json
 import csv
 from io import StringIO
-import codecs
 
-from flask.wrappers import Request, Response
+from flask import Response
+from werkzeug.wrappers import response
 
-import ckan.logic as l
-
-from ckan.common import config
+import ckan.logic as logic
+from ckan.common import config, _
 from xlsxwriter.workbook import Workbook
 from xml.etree.cElementTree import Element, SubElement, ElementTree
-from ckan.common import _
 from ckanext.dataexplorer.helpers import CustomJSONEncoder
 
 
@@ -52,24 +50,37 @@ class XMLWriter(object):
 
 
 class JSONWriter(object):
-    def __init__(self, output, columns):
-        self.output = output
+    def __init__(self, columns, data):
+        self.output = StringIO()
         self.columns = columns
         self.first = True
+        self.n = len(data)
+        self.output.write(
+            '{\n  "fields": %s,\n  "records": [' %
+            json.dumps(columns, ensure_ascii=False, separators=(',', ':')))
 
-    def writerow(self, row):
+    def writerow(self, data):
+        for index, json_line in enumerate(data):
+            if self.first:
+                self.first = False
+                self.output.write('\n   ')
+            else:
+                self.output.write(',\n  ')
+            self.output.write(json.dumps(
+                    json_line,
+                    indent=8,
+                    ensure_ascii=False,
+                    separators=(u',', u':'),
+                    sort_keys=True,
+                    cls=CustomJSONEncoder))
+            if index == (self.n - 1):
+                self.finish()
+            yield self.output.getvalue()
+            self.output.truncate(0)
+            self.output.seek(0)
 
-        if self.first:
-            self.first = False
-            self.output.write(b'\n    ')
-        else:
-            self.output.write(b',\n    ')
-        self.output.write(json.dumps(
-            row,
-            ensure_ascii=False,
-            separators=(u',', u':'),
-            sort_keys=True,
-            cls=CustomJSONEncoder).encode('utf-8'))
+    def finish(self):
+        self.output.write('\n]}\n')
 
 
 class UnicodeCSVWriter:
@@ -89,9 +100,13 @@ class UnicodeCSVWriter:
             line.truncate(0)
             line.seek(0)
 
+
 class FileWriterService():
     def _tsv_writer(self, columns, records, name):
-        response = Response(UnicodeCSVWriter.iter_csv(columns, records, delimiter='\t'), mimetype='text/csv')
+        response = Response(UnicodeCSVWriter.iter_csv(columns,
+                                                      records,
+                                                      delimiter='\t'),
+                            mimetype='text/csv')
         response.headers['Content-Type'] = b'text/tsv; charset=utf-8'
         if name:
             response.headers['Content-disposition'] = bytes(
@@ -101,36 +116,30 @@ class FileWriterService():
         return response
 
     def _csv_writer(self, columns, records, name):
-        response = Response(UnicodeCSVWriter.iter_csv(columns, records), mimetype='text/csv')
+        response = Response(UnicodeCSVWriter.iter_csv(columns,
+                                                      records,
+                                                      delimiter=','),
+                            mimetype='text/csv')
         response.headers['Content-Type'] = b'text/csv; charset=utf-8'
         if name:
             response.headers['Content-disposition'] = bytes(
                 'attachment; filename="{name}.csv"'.format(
                     name=name), encoding='utf8')
+
         return response
 
-    def _json_writer(self, columns, records, response, name):
+    def _json_writer(self, columns, records, name):
+        json_obj = JSONWriter(columns, records)
+        response = Response(json_obj.writerow(records),
+                            mimetype='application/json')
 
-        if hasattr(response, u'headers'):
-            response.headers['Content-Type'] = (
-                b'application/json; charset=utf-8')
-            if name:
-                response.headers['Content-disposition'] = (
-                    b'attachment; filename="{name}.json"'.format(
-                        name=name.encode('utf-8')))
+        response.headers['Content-Type'] = (b'application/json; charset=utf-8')
+        if name:
+            response.headers['Content-disposition'] = bytes(
+                'attachment; filename="{name}.json"'.format(
+                    name=name), encoding='utf8')
 
-        response.write(
-            b'{\n  "fields": %s,\n  "records": [' % json.dumps(
-                columns, ensure_ascii=False, separators=(u',', u':')).encode(u'utf-8'))
-
-        # Initiate json writer and columns
-        wr = JSONWriter(response, [c.encode("utf-8") for c in columns])
-
-        # Write records
-        for record in records:
-            wr.writerow([record[column] for column in columns])
-
-        response.write(b'\n]}\n')
+        return response
 
     def _xml_writer(self, columns, records, response, name):
 
@@ -159,7 +168,8 @@ class FileWriterService():
 
         if hasattr(response, u'headers'):
             response.headers['Content-Type'] = (
-                b'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8')
+                b'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;\
+                    charset=utf-8')
             if name:
                 response.headers['Content-disposition'] = (
                     b'attachment; filename="{name}.xlsx"'.format(
@@ -192,10 +202,10 @@ class FileWriterService():
         if format == 'csv':
             return self._csv_writer(columns, records, name)
         if format == 'json':
-            return self._json_writer(columns, records, response, name)
+            return self._json_writer(columns, records, name)
         if format == 'xml':
             return self._xml_writer(columns, records, response, name)
         if format == 'tsv':
             return self._tsv_writer(columns, records, name)
-        raise l.ValidationError(_(
+        raise logic.ValidationError(_(
             u'format: must be one of %s') % u', '.join(DUMP_FORMATS))

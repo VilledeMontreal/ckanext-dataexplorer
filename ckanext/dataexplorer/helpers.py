@@ -4,8 +4,6 @@ import json
 from datetime import date, timedelta, datetime
 from decimal import Decimal
 
-from ckan.common import config
-
 log = logging.getLogger(__name__)
 
 NAIVE_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'

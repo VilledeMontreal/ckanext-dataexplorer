@@ -1,9 +1,8 @@
 import logging
 import json
 
-from flask import Blueprint, make_response, Response
+from flask import Blueprint
 from ckan import model
-# from ckan.common import response
 from ckan.plugins import toolkit
 from ckan.plugins.toolkit import (abort, ObjectNotFound, ValidationError,
                                   c, _, request, config)
@@ -69,8 +68,6 @@ def extract():
             abort(404, _('DataStore resource not found'))
 
         try:
-            print('::::::columns', columns)
-            print('::::::::records', resource_data.get('records'))
             return writer.write_to_file(columns,
                                  resource_data.get('records'),
                                  format,
