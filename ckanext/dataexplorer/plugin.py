@@ -74,16 +74,9 @@ class ReclineViewBase(p.SingletonPlugin, DefaultTranslation):
         toolkit.add_template_directory(config, 'templates')
         toolkit.add_resource('assets', 'dataexplorer')
 
-
     # IBlueprint
     def get_blueprint(self):
         return [dataexplorer]
-        # ctrl = 'ckanext.dataexplorer.controllers.dataexplorer:DataExplorer
-        # map.connect('resource_extract',
-        #             '/dataexplorer/extract',
-        #             controller=ctrl,
-        #             action='extract')
-        # return map
 
     def can_view(self, data_dict):
         resource = data_dict['resource']

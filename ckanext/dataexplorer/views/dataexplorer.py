@@ -32,16 +32,16 @@ def _get_action(action, data_dict):
 def extract():
     writer = FileWriterService()
     columns = []
-    
+
     if request.method == 'POST':
         data_dict = dict(request.form)
         data = json.loads(data_dict['extract_data'])
         data['limit'] = config.get('ckanext.dataexplorer.extract_rows_limit',
-                                    30000)
+                                   30000)
         format = data.pop('format')
 
         resource_meta = _get_action('resource_show',
-                                         {'id': data['resource_id']})
+                                    {'id': data['resource_id']})
 
         name = resource_meta.get('name', "extract").replace(' ', '_')
 
@@ -69,12 +69,14 @@ def extract():
 
         try:
             return writer.write_to_file(columns,
-                                 resource_data.get('records'),
-                                 format,
-                                 name)
+                                        resource_data.get('records'),
+                                        format,
+                                        name)
 
         except ValidationError:
             abort(400, _(
                 u'Format: must be one of %s') % u', '.join(DUMP_FORMATS))
 
-dataexplorer.add_url_rule('/dataexplorer/extract', view_func=extract, methods=['GET', 'POST'])
+
+dataexplorer.add_url_rule('/dataexplorer/extract',
+                          view_func=extract, methods=['GET', 'POST'])

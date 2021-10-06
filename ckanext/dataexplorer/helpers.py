@@ -30,8 +30,11 @@ class CustomJSONEncoder(json.JSONEncoder):
 
             raise
 
+
 def _get_logic_functions(module_root, logic_functions={}):
-    '''Helper function that scans extension logic dir for all logic functions.'''
+    '''
+    Helper function that scans extension logic dir for all logic functions.
+    '''
     for module_name in ['create', 'delete', 'get', 'patch', 'update']:
         module_path = '%s.%s' % (module_root, module_name,)
 
@@ -42,10 +45,11 @@ def _get_logic_functions(module_root, logic_functions={}):
 
         for key, value in module.__dict__.items():
             if not key.startswith('_') and (hasattr(value, '__call__')
-                                            and (value.__module__ == module_path)):
+               and (value.__module__ == module_path)):
                 logic_functions[key] = value
 
     return logic_functions
+
 
 def remove_elements(row):
     """Removes elements that are not in columns"""
@@ -62,6 +66,7 @@ def remove_elements(row):
     except KeyError:
         pass
 
+
 def replace(column):
     column = column.replace(" ", "_")
     column = column.replace("(", "")
@@ -70,4 +75,5 @@ def replace(column):
     column = column.replace("<", "&lt;")
     column = column.replace(">", "&gt;")
     column = column.replace("\"", "&quot;")
+    column = column.replace("'", "&apos;")
     return column
