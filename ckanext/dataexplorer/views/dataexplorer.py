@@ -51,10 +51,10 @@ def extract():
             for key in resource_data['fields']:
                 columns.append(key['id'])
 
-            # try:
-            #     columns.remove('_id')
-            # except ValueError:
-            #     pass
+            try:
+                columns.remove('_id')
+            except ValueError:
+                pass
             try:
                 columns.remove('_full_count')
             except ValueError:

@@ -46,3 +46,28 @@ def _get_logic_functions(module_root, logic_functions={}):
                 logic_functions[key] = value
 
     return logic_functions
+
+def remove_elements(row):
+    """Removes elements that are not in columns"""
+    try:
+        row.pop('_id')
+    except KeyError:
+        pass
+    try:
+        row.pop('_full_count')
+    except KeyError:
+        pass
+    try:
+        row.pop('rank')
+    except KeyError:
+        pass
+
+def replace(column):
+    column = column.replace(" ", "_")
+    column = column.replace("(", "")
+    column = column.replace(")", "")
+    column = column.replace("&", "&amp;")
+    column = column.replace("<", "&lt;")
+    column = column.replace(">", "&gt;")
+    column = column.replace("\"", "&quot;")
+    return column
