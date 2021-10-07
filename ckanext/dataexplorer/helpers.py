@@ -68,6 +68,9 @@ def remove_elements(row):
 
 
 def replace(column):
+    d = str(column[0])
+    if d.isnumeric():
+        column = '_' + column
     column = column.replace(" ", "_")
     column = column.replace("(", "")
     column = column.replace(")", "")
