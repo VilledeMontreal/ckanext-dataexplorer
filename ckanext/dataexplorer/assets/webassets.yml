@@ -14,9 +14,7 @@ dataexplorer_js:
       - base/main
   contents:
     - js/recline_view.js
-    - js/recline_view.min.js
     - js/widget.recordcount.js
-    - js/widget.recordcount.min.js
 
 dataexplorer_vendor_js:
   output: dataexplorer/%(version)s_dataexplorer_vendor_js.js

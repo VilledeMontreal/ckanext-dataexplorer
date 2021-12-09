@@ -3,7 +3,7 @@
 {% block page %}
 
   {% set map_config = h.get_map_config() %}
-  <div data-module="recline_view"
+  <div data-module="dataexplorer_recline_view"
        data-module-site_url="{{ h.dump_json(h.url('/', locale='default', qualified=true)) }}"
        data-module-resource = "{{ h.dump_json(resource_json) }}";
        data-module-resource-view = "{{ h.dump_json(resource_view_json) }}";
@@ -15,10 +15,11 @@
     </h4>
   </div>
 
-  {% asset 'dataexplorer/dataexplorer_css' %}
-  {% asset 'dataexplorer/dataexplorer_js' %}
   {% asset 'dataexplorer/dataexplorer_vendor_js' %}
   {% asset 'dataexplorer/dataexplorer_vendor_css' %}
+  {% asset 'dataexplorer/dataexplorer_css' %}
+  {% asset 'dataexplorer/dataexplorer_js' %}
+
 {% endblock %}
 
 {% block styles %}{% endblock %}

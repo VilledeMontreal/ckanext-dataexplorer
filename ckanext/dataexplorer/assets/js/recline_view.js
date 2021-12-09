@@ -1,4 +1,4 @@
-this.ckan.module('recline_view', function (jQuery, _) {
+this.ckan.module('dataexplorer_recline_view', function (jQuery, _) {
   return {
     options: {
       site_url: "",
