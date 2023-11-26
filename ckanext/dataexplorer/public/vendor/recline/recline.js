@@ -4318,7 +4318,6 @@ my.QueryEditor = Backbone.View.extend({
           <input class="form-control search-query" type="text" id="q" name="q" value="{{q}}" placeholder=' + ckan.i18n._("Search data ...") + '> \
         </div> \
       </div> \
-      <button type="submit" class="btn btn-default">' + ckan.i18n._('Go') + '&raquo;</button> \
     </form> \
   ',
 
