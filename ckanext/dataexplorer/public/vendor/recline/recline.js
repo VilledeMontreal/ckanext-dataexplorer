@@ -2298,8 +2298,8 @@ my.Map = Backbone.View.extend({
   _setupMap: function(){
     var self = this;
     this.map = new L.Map(this.$map.get(0));
-    var mapUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
-    var attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    var mapUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    var attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
     var subdomains = 'abc';
 
     var bg = new L.TileLayer(mapUrl, {maxZoom: 19, attribution: attribution, subdomains: subdomains});
@@ -4058,7 +4058,7 @@ my.FilterEditor = Backbone.View.extend({
       <a href="#" class="js-add-filter">Add filter</a> \
       <form class="form-stacked js-add" style="display: none;"> \
         <div class="form-group"> \
-          <label>Fibitcheld</label> \
+          <label>Field</label> \
           <select class="fields form-control"> \
             {{#fields}} \
             <option value="{{id}}">{{label}}</option> \
