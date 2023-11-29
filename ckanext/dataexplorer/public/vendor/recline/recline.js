@@ -2298,8 +2298,8 @@ my.Map = Backbone.View.extend({
   _setupMap: function(){
     var self = this;
     this.map = new L.Map(this.$map.get(0));
-    var mapUrl = this.options.mapTilesURL || 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png';
-    var attribution = this.options.mapTilesAttribution ||'Map tiles by <a href="http://stamen.com">Stamen Design</a> (<a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>). Data by <a href="http://openstreetmap.org">OpenStreetMap</a> (<a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>)';
+    var mapUrl = this.options.mapTilesURL || 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
+    var attribution = this.options.mapTilesAttribution ||'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
     var subdomains = this.options.mapTilesSubdomains || 'abc';
 
     var bg = new L.TileLayer(mapUrl, {maxZoom: 19, attribution: attribution, subdomains: subdomains});
