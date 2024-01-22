@@ -2,6 +2,12 @@ this.recline = this.recline || {};
 this.recline.Backend = this.recline.Backend || {};
 this.recline.Backend.DataProxy = this.recline.Backend.DataProxy || {};
 
+// Add directly jquery.flot.min.js becouse this.plot = $.plot
+// is not recognised as function
+var script = document.createElement('script');
+script.src = '//cdn.jsdelivr.net/jquery.flot/0.8.3/jquery.flot.min.js';
+document.getElementsByTagName('head')[0].appendChild(script);
+
 (function(my) {
   "use strict";
   my.__type__ = 'dataproxy';
